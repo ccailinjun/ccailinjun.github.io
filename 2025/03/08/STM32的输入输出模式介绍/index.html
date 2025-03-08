@@ -1,0 +1,288 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>STM32的输入输出模式介绍 | CCの日记</title><meta name="author" content="cailinjun"><meta name="copyright" content="cailinjun"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、浮空输入模式（GPIO_Mode_IN_FLOATING） 工作原理：此模式下，GPIO 引脚不连接内部上拉或下拉电阻，处于一种 “悬空” 状态，完全依靠外部电路来确定引脚的电平。它对外部输入信号的响应最为 “纯粹”，没有内部电阻的干扰，但也因此容易受到外界干扰信号的影响。  代码设置示例（基于 STM32 标准库）： 12345&#x2F;&#x2F; 假设要将 GPIOA 的 Pin0 设置为浮空输入模式GP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="STM32的输入输出模式介绍">
+<meta property="og:url" content="https://www.cailinjun.com/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="CCの日记">
+<meta property="og:description" content="一、浮空输入模式（GPIO_Mode_IN_FLOATING） 工作原理：此模式下，GPIO 引脚不连接内部上拉或下拉电阻，处于一种 “悬空” 状态，完全依靠外部电路来确定引脚的电平。它对外部输入信号的响应最为 “纯粹”，没有内部电阻的干扰，但也因此容易受到外界干扰信号的影响。  代码设置示例（基于 STM32 标准库）： 12345&#x2F;&#x2F; 假设要将 GPIOA 的 Pin0 设置为浮空输入模式GP">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cailinjun.com/img/head.png">
+<meta property="article:published_time" content="2025-03-08T06:29:26.000Z">
+<meta property="article:modified_time" content="2025-03-08T06:52:19.175Z">
+<meta property="article:author" content="cailinjun">
+<meta property="article:tag" content="GPIO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cailinjun.com/img/head.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "STM32的输入输出模式介绍",
+  "url": "https://www.cailinjun.com/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/",
+  "image": "https://www.cailinjun.com/img/head.png",
+  "datePublished": "2025-03-08T06:29:26.000Z",
+  "dateModified": "2025-03-08T06:52:19.175Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "cailinjun",
+      "url": "https://www.cailinjun.com/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/head.png"><link rel="canonical" href="https://www.cailinjun.com/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'STM32的输入输出模式介绍',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/head.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/photo/"><i class="fa-fw fas fa-image"></i><span> Photo</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> Link</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fa fa-message"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> About</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/bg.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/head.png" alt="Logo"><span class="site-name">CCの日记</span></a><a class="nav-page-title" href="/"><span class="site-name">STM32的输入输出模式介绍</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/photo/"><i class="fa-fw fas fa-image"></i><span> Photo</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> Link</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fa fa-message"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> About</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">STM32的输入输出模式介绍</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-03-08T06:29:26.000Z" title="发表于 2025-03-08 14:29:26">2025-03-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-03-08T06:52:19.175Z" title="更新于 2025-03-08 14:52:19">2025-03-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/STM32%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">STM32学习笔记</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="twikoo_visitors"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h3 id="一、浮空输入模式（GPIO-Mode-IN-FLOATING）"><a href="#一、浮空输入模式（GPIO-Mode-IN-FLOATING）" class="headerlink" title="一、浮空输入模式（GPIO_Mode_IN_FLOATING）"></a>一、浮空输入模式（GPIO_Mode_IN_FLOATING）</h3><ul>
+<li><p>工作原理：此模式下，GPIO 引脚不连接内部上拉或下拉电阻，处于一种 “悬空” 状态，完全依靠外部电路来确定引脚的电平。它对外部输入信号的响应最为 “纯粹”，没有内部电阻的干扰，但也因此容易受到外界干扰信号的影响。</p>
+</li>
+<li><p>代码设置示例（基于 STM32 标准库）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 假设要将 GPIOA 的 Pin0 设置为浮空输入模式</span><br><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure></li>
+<li><p>适用场景：适用于连接一些具有高阻抗输出的外部设备，例如某些传感器在未被触发时输出为高阻抗，如电容式触摸传感器。在这种情况下，使用浮空输入模式可以准确检测传感器输出电平的微小变化，就像在平静的湖面上等待一丝微风引起的涟漪，一旦有变化就能及时捕捉到。</p>
+</li>
+</ul>
+<h3 id="二、上拉输入模式（GPIO-Mode-IPU）"><a href="#二、上拉输入模式（GPIO-Mode-IPU）" class="headerlink" title="二、上拉输入模式（GPIO_Mode_IPU）"></a>二、上拉输入模式（GPIO_Mode_IPU）</h3><ul>
+<li>工作原理：内部上拉电阻将 GPIO 引脚电平拉高至接近电源电压（VDD），当外部没有强低电平信号输入时，引脚保持高电平。只有当外部电路提供足够低的电平信号（通常低于阈值电压）时，才会将引脚拉低。</li>
+<li>代码设置示例：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure></li>
+<li>适用场景：常用于按键电路，当按键未按下时，由于上拉电阻的作用，引脚为高电平；当按键按下时，引脚与地相连，变为低电平。这就像一个简单的开关控制电路，上拉电阻确保了在默认状态下电路处于一种稳定的高电平 “待命” 状态，等待按键按下这个 “触发事件” 来改变电平状态，进而触发后续的操作，如控制一个 LED 的亮灭或者启动某个功能模块。</li>
+</ul>
+<h3 id="三、下拉输入模式（GPIO-Mode-IPD）"><a href="#三、下拉输入模式（GPIO-Mode-IPD）" class="headerlink" title="三、下拉输入模式（GPIO_Mode_IPD）"></a>三、下拉输入模式（GPIO_Mode_IPD）</h3><ul>
+<li>工作原理：与上拉输入模式相反，内部下拉电阻将 GPIO 引脚电平拉低至接近地电位（GND）。在没有外部强高电平信号输入时，引脚保持低电平，只有当外部输入高于阈值的高电平信号时，才会将引脚拉高。</li>
+<li>代码设置示例：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>适用场景：在一些信号检测电路中，如果外部信号大部分时间处于高电平状态，只有在特定情况下才会变为低电平，那么下拉输入模式可以有效防止由于引脚浮空而导致的误判。例如在一个光传感器电路中，当环境光线较强时，传感器输出高电平，下拉输入模式可以确保在光线正常情况下，引脚保持低电平，只有当光线突然减弱到一定程度，传感器输出低电平信号时，才会触发相应的处理，就像一个守门员，在平时守住球门（低电平状态），只有当有特殊的 “球”（低电平信号）进来时才会做出反应。</li>
+</ul>
+<h3 id="四、模拟输入模式（GPIO-Mode-AIN）"><a href="#四、模拟输入模式（GPIO-Mode-AIN）" class="headerlink" title="四、模拟输入模式（GPIO_Mode_AIN）"></a>四、模拟输入模式（GPIO_Mode_AIN）</h3><ul>
+<li>工作原理：在这种模式下，GPIO 引脚直接与内部的模拟电路相连，忽略数字逻辑电平的限制，专门用于接收连续变化的模拟信号，如来自温度传感器、压力传感器等的模拟电压信号。它可以提供高精度的模拟信号采集，因为不会受到数字电路的干扰。</li>
+</ul>
+<h3 id="五、开漏输出模式（GPIO-Mode-OUT-OD）"><a href="#五、开漏输出模式（GPIO-Mode-OUT-OD）" class="headerlink" title="五、开漏输出模式（GPIO_Mode_OUT_OD）"></a>五、开漏输出模式（GPIO_Mode_OUT_OD）</h3><ul>
+<li><p>工作原理：开漏输出模式下，当输出低电平时，引脚直接与地相连，能够提供较强的灌电流能力；而当输出高电平时，引脚处于高阻态，需要外部接上拉电阻才能实现高电平输出。这种模式允许多个开漏输出引脚连接到同一条总线上，实现 “线与” 功能，即只要有一个引脚输出低电平，总线电平就为低电平。</p>
+</li>
+<li><p>代码设置示例：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;</span><br><span class="line">GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>适用场景：在 I2C 总线通信中，多个设备通过 SDA（数据线）和 SCL（时钟线）进行数据传输。所有设备的 SDA 引脚都设置为开漏输出模式，这样在数据传输过程中，任何一个设备都可以将 SDA 线拉低来表示数据 0，而在数据 1 传输时，依靠外部上拉电阻将 SDA 线拉高。这就像一群人在传递一个信息，只要有一个人说 “不”（输出低电平），整个信息就是 “否定” 的，只有当所有人都同意（都处于高阻态且上拉电阻使线为高电平）时，信息才是 “肯定” 的，从而实现了多设备间稳定且可靠的通信连接。</li>
+</ul>
+<h3 id="六、推挽输出模式（GPIO-Mode-OUT-PP）"><a href="#六、推挽输出模式（GPIO-Mode-OUT-PP）" class="headerlink" title="六、推挽输出模式（GPIO_Mode_OUT_PP）"></a>六、推挽输出模式（GPIO_Mode_OUT_PP）</h3><ul>
+<li><p>工作原理：推挽输出模式的 GPIO 引脚可以直接输出高电平和低电平，并且具有较强的驱动能力。在输出高电平时，由内部的 P 型 MOS 管导通，将引脚电平拉高；在输出低电平时，由内部的 N 型 MOS 管导通，将引脚电平拉低。这种模式不需要外部上拉电阻，能够快速、稳定地驱动外部负载。</p>
+</li>
+<li><p>代码设置示例</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;</span><br><span class="line">GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>适用场景：在驱动 LED 灯时，推挽输出模式可以轻松地控制 LED 的亮灭。当输出高电平，LED 熄灭；当输出低电平，LED 点亮，并且由于其较强的驱动能力，可以确保 LED 正常工作，即使连接多个 LED 也能稳定驱动。就像一个电源开关，能够精准地控制电路的通断，让 LED 按照我们的意愿发光或者熄灭。</li>
+</ul>
+<h3 id="复用开漏输出模式（GPIO-Mode-AF-OD）"><a href="#复用开漏输出模式（GPIO-Mode-AF-OD）" class="headerlink" title="复用开漏输出模式（GPIO_Mode_AF_OD）"></a>复用开漏输出模式（GPIO_Mode_AF_OD）</h3><ul>
+<li><p>工作原理：此模式下，GPIO 引脚的控制权交给其他外设模块，同时保持开漏输出的特性。它可以实现特定外设功能与开漏输出的结合，例如在某些通信接口中，既能满足外设的通信时序要求，又能利用开漏输出的 “线与” 功能进行多设备间的协同工作</p>
+</li>
+<li><p>代码设置示例：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;</span><br><span class="line">GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;</span><br><span class="line">GPIO_InitStructure.GPIO_Alternate = GPIO_AF1_TIM2; // 假设复用为 TIM2 功能</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>适用场景：在使用 STM32 的 USART 串口通信的硬件流控制功能时，如 RTS（请求发送）和 CTS（清除发送）引脚，可设置为复用开漏输出模式。这样既可以让引脚在串口通信协议下由 USART 外设控制，又能利用开漏输出特性与其他设备进行有效的信号交互，就像一个多功能工具，在特定的工作场景（串口通信）下，切换到合适的功能模式（复用开漏输出），与其他设备协同完成任务。</li>
+</ul>
+<h3 id="八、复用推挽输出模式（GPIO-Mode-AF-PP）"><a href="#八、复用推挽输出模式（GPIO-Mode-AF-PP）" class="headerlink" title="八、复用推挽输出模式（GPIO_Mode_AF_PP）"></a>八、复用推挽输出模式（GPIO_Mode_AF_PP）</h3><ul>
+<li><p>工作原理：类似于推挽输出模式，不过是在复用功能的情境下。引脚由其他外设模块控制，并且以推挽输出的强大驱动能力来实现特定外设功能，如高速数据传输、精确的信号生成等</p>
+</li>
+<li><p>代码设置示例：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GPIO_InitTypeDef GPIO_InitStructure;</span><br><span class="line">GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;</span><br><span class="line">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;</span><br><span class="line">GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;</span><br><span class="line">GPIO_InitStructure.GPIO_Alternate = GPIO_AF2_SPI1; // 假设复用为 SPI1 功能</span><br><span class="line">GPIO_Init(GPIOA, &amp;GPIO_InitStructure);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>适用场景：在 SPI 总线通信中，用于数据传输的 MOSI（主出从入）、MISO（主入从出）和 SCK（时钟）引脚通常设置为复用推挽输出模式。这样可以保证在 SPI 高速数据传输过程中，数据和时钟信号能够稳定、快速地传输，就像一条高速数据通道，各个引脚各司其职，以强大的推挽输出能力推动数据在不同设备间高效流转，确保整个 SPI 通信系统的正常运行。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cailinjun.com">cailinjun</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cailinjun.com/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/">https://www.cailinjun.com/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cailinjun.com" target="_blank">CCの日记</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/GPIO/">GPIO</a></div><div class="post-share"><div class="social-share" data-image="/img/head.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/03/06/TIM%E5%AE%9A%E6%97%B6%E4%B8%AD%E6%96%AD/" title="TIM定时中断"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">TIM定时中断</div></div><div class="info-2"><div class="info-item-1">TIM定时器（timer）定时器1. 基本介绍 定时器可以对输入的时钟进行计数，并在计算数值达到设定值时触发中断。 16位计数器、预分频器、自动重装寄存器的时基单元，在72MHz计数时钟下可以实现最大59.65s的定时。 不仅具备基本的定时中断功能，而且还包含内外时钟源的选择、输入捕获、输出比较、编码器接口、主从触发模式等多种功能。 根据复杂度和应用场景分为了高级定时器、通用定时器、基本定时器三种类型。  2. 定时器类型   类型 编号 总线 功能    高级定时器 TIM1、TIM8 APB2 拥有通用定时器全部功能，并额外具有重复计数器、死区生成、互补输出、刹车输入等功能   通用定时器 TIM2、TIM3、TIM4、TIM5 APB1 拥有基本定时器全部功能，并额外具有内外时钟源选择、输入捕获、输出比较、编码器接口、主从出触发模式等功能   基本定时 TIM6、TIM7 APB1 拥有定时中断、主模式触发DAC的功能    STM32F03C8T6定时器资源：TIM1、TIM2、TIM3、TIM4   2025&#x2F;3&#x2F;6 未完 </div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/head.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">cailinjun</div><div class="author-info-description">行到水穷处，坐看云起时</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ccailinjun"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ccailinjun" target="_blank" title="Github"><i class="fab fa-github" style="color: #hdhfbb;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%B5%AE%E7%A9%BA%E8%BE%93%E5%85%A5%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-IN-FLOATING%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">一、浮空输入模式（GPIO_Mode_IN_FLOATING）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%8A%E6%8B%89%E8%BE%93%E5%85%A5%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-IPU%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">二、上拉输入模式（GPIO_Mode_IPU）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%B8%8B%E6%8B%89%E8%BE%93%E5%85%A5%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-IPD%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、下拉输入模式（GPIO_Mode_IPD）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%A8%A1%E6%8B%9F%E8%BE%93%E5%85%A5%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-AIN%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、模拟输入模式（GPIO_Mode_AIN）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%BC%80%E6%BC%8F%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-OUT-OD%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">五、开漏输出模式（GPIO_Mode_OUT_OD）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%8E%A8%E6%8C%BD%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-OUT-PP%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">六、推挽输出模式（GPIO_Mode_OUT_PP）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E7%94%A8%E5%BC%80%E6%BC%8F%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-AF-OD%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">复用开漏输出模式（GPIO_Mode_AF_OD）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E5%A4%8D%E7%94%A8%E6%8E%A8%E6%8C%BD%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%EF%BC%88GPIO-Mode-AF-PP%EF%BC%89"><span class="toc-number">8.</span> <span class="toc-text">八、复用推挽输出模式（GPIO_Mode_AF_PP）</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/08/STM32%E7%9A%84%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%A8%A1%E5%BC%8F%E4%BB%8B%E7%BB%8D/" title="STM32的输入输出模式介绍">STM32的输入输出模式介绍</a><time datetime="2025-03-08T06:29:26.000Z" title="发表于 2025-03-08 14:29:26">2025-03-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/06/TIM%E5%AE%9A%E6%97%B6%E4%B8%AD%E6%96%AD/" title="TIM定时中断">TIM定时中断</a><time datetime="2025-03-06T14:21:07.000Z" title="发表于 2025-03-06 22:21:07">2025-03-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/05/MVM%E5%92%8CMVC%E6%A8%A1%E5%BC%8F/" title="MVM和MVC模式">MVM和MVC模式</a><time datetime="2025-03-05T13:53:12.000Z" title="发表于 2025-03-05 21:53:12">2025-03-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/02/20/%E7%90%86%E8%A7%A3%E9%97%AD%E5%8C%85/" title="理解闭包">理解闭包</a><time datetime="2025-02-20T15:05:11.000Z" title="发表于 2025-02-20 23:05:11">2025-02-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/02/16/STM32%E4%B8%AD%E6%96%AD/" title="STM32中断">STM32中断</a><time datetime="2025-02-16T14:21:30.000Z" title="发表于 2025-02-16 22:21:30">2025-02-16</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div id="footer-wrap"><div class="copyright">&copy;2023 - 2025 By cailinjun</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div><div class="footer_custom_text"><a href="https://beian.miit.gov.cn/" target="_blank">豫ICP备2023040361号</a> <img class="icp-icon" src="/img/icp.png"> <a href="https://beian.miit.gov.cn/" target="_blank">豫公网安备41159002000146</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo.cailinjun.com',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  const init = (el = document, path = location.pathname) => {
+    twikoo.init({
+      el: el.querySelector('#twikoo-wrap'),
+      envId: 'https://twikoo.cailinjun.com',
+      region: '',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      },
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || path
+    })
+
+    
+
+    isShuoshuo && (window.shuoshuoComment.destroyTwikoo = () => {
+      if (el.children.length) {
+        el.innerHTML = ''
+        el.classList.add('no-comment')
+      }
+    })
+  }
+
+  const loadTwikoo = (el, path) => {
+    if (typeof twikoo === 'object') setTimeout(() => init(el, path), 0)
+    else btf.getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(() => init(el, path))
+  }
+
+  if (isShuoshuo) {
+    'Twikoo' === 'Twikoo'
+      ? window.shuoshuoComment = { loadComment: loadTwikoo }
+      : window.loadOtherComment = loadTwikoo
+    return
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo()
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><link rel="stylesheet" href="/css/background.css"><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="false"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
